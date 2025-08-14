@@ -101,14 +101,90 @@ REACT_APP_API_URL=https://your-backend.vercel.app
 
 ## Step 6: Test Your MVP
 
-### Test Backend API:
-```bash
-# Health check
-curl https://your-backend.vercel.app/health
+### Test Backend API Deployment:
 
-# Test public endpoint
+#### 1. Basic Health Check:
+```bash
+# Replace 'your-backend.vercel.app' with your actual deployment URL
+curl https://your-backend.vercel.app/health
+```
+**Expected Response:**
+```json
+{
+  "status": "ok",
+  "message": "Cycle-Bees backend is running."
+}
+```
+
+#### 2. Test Database Connection:
+```bash
+# Test Supabase connection via contact endpoint
 curl https://your-backend.vercel.app/api/contact
 ```
+**Expected Response:**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+#### 3. Test Authentication Endpoint:
+```bash
+# Test OTP send endpoint (will return validation error but shows endpoint works)
+curl -X POST https://your-backend.vercel.app/api/auth/send-otp \
+  -H "Content-Type: application/json" \
+  -d '{"phone":"1234567890"}'
+```
+**Expected Response:**
+```json
+{
+  "success": false,
+  "message": "Phone number must be exactly 10 digits and start with 6-9"
+}
+```
+
+#### 4. Test Service Endpoints:
+```bash
+# Test repair services
+curl https://your-backend.vercel.app/api/repair/services
+
+# Test time slots
+curl https://your-backend.vercel.app/api/repair/time-slots
+
+# Test promotional cards
+curl https://your-backend.vercel.app/api/promotional/cards
+```
+
+#### 5. Check Vercel Function Logs:
+1. Go to your Vercel dashboard
+2. Click on your backend project
+3. Go to "Functions" tab
+4. Click on any function to see logs
+5. Look for connection messages like "✅ Connected to Supabase database"
+
+### Troubleshooting Backend Issues:
+
+#### If Health Check Fails:
+- Check Vercel deployment logs
+- Verify vercel.json configuration
+- Ensure all dependencies are installed
+
+#### If Database Connection Fails:
+- Verify Supabase environment variables are set correctly
+- Check Supabase project is active
+- Ensure database schema has been applied
+
+#### If Authentication Fails:
+- Verify JWT_SECRET is set and strong
+- Check that phone validation is working
+
+### Using Browser for Testing:
+You can also test these endpoints directly in your browser:
+- `https://your-backend.vercel.app/health`
+- `https://your-backend.vercel.app/api/contact`
+- `https://your-backend.vercel.app/api/repair/services`
+- `https://your-backend.vercel.app/api/promotional/cards`
 
 ### Test Admin Dashboard:
 1. Visit `https://your-admin.vercel.app`
