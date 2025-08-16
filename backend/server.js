@@ -7,7 +7,6 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
-// const sqlite3 = require('sqlite3').verbose(); // Legacy SQLite - commented for rollback
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -113,9 +112,9 @@ app.use(generalLimiter);
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
         ? ['https://your-admin-domain.vercel.app', 'https://your-api-domain.vercel.app']
-        : ['http://localhost:3001', 'http://localhost:19006', 'http://192.168.1.48:3000'],
+        : ['http://localhost:3001', 'http://localhost:19006', 'http://192.168.0.103:19006', 'exp://192.168.0.103:8081'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control', 'Pragma', 'Expires'],
     credentials: true
 }));
 app.use(helmet());
@@ -157,15 +156,6 @@ app.get('/health', (req, res) => {
 // Connect to Supabase database
 const supabase = require('./database/supabase-connection');
 
-// Legacy SQLite connection (commented for rollback)
-// const dbPath = process.env.DB_PATH || './database/cyclebees.db';
-// const db = new sqlite3.Database(dbPath, (err) => {
-//     if (err) {
-//         console.error('Failed to connect to database:', err.message);
-//     } else {
-//         console.log('Connected to SQLite database at', dbPath);
-//     }
-// });
 
 // Routes with specific rate limiting
 const authRoutes = require('./routes/auth');

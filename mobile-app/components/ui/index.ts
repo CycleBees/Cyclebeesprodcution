@@ -27,9 +27,6 @@ export type { QuickActionCardProps } from '../QuickActionCard';
 export { default as ServiceCard } from '../ServiceCard';
 export type { ServiceCardProps } from '../ServiceCard';
 
-export { default as BicycleCard } from '../BicycleCard';
-export type { BicycleCardProps, BicyclePhoto } from '../BicycleCard';
-
 export { default as FileUpload } from '../FileUpload';
 export type { FileUploadProps } from '../FileUpload';
 
@@ -38,9 +35,6 @@ export type { RequestCardProps, RequestFile } from '../RequestCard';
 
 export { default as EmptyState } from '../EmptyState';
 export type { EmptyStateProps } from '../EmptyState';
-
-export { default as ProfileCard } from '../ProfileCard';
-export type { ProfileCardProps } from '../ProfileCard';
 
 export { default as LoadingDots } from './LoadingDots';
 export type { LoadingDotsProps } from './LoadingDots'; 

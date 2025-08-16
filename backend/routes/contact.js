@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database/connection');
+const supabase = require('../database/supabase-connection');
 const { authenticateToken } = require('../middleware/auth');
 
 // GET /api/contact/settings - Get current contact settings (public)
 router.get('/settings', async (req, res) => {
   try {
-    const { data: row, error } = await db
+    const { data: row, error } = await supabase
       .from('contact_settings')
       .select('type, value, is_active')
       .eq('is_active', true)
@@ -58,7 +58,7 @@ router.get('/admin/contact-settings', authenticateToken, async (req, res) => {
       });
     }
     
-    const { data: row, error } = await db
+    const { data: row, error } = await supabase
       .from('contact_settings')
       .select('id, type, value, is_active, created_at, updated_at')
       .order('created_at', { ascending: false })
@@ -144,7 +144,7 @@ router.post('/admin/contact-settings', authenticateToken, async (req, res) => {
     }
     
     // Deactivate all existing settings
-    const { error: deactivateError } = await db
+    const { error: deactivateError } = await supabase
       .from('contact_settings')
       .update({ is_active: false });
     
@@ -157,7 +157,7 @@ router.post('/admin/contact-settings', authenticateToken, async (req, res) => {
     }
     
     // Insert new setting
-    const { data: newSetting, error: insertError } = await db
+    const { data: newSetting, error: insertError } = await supabase
       .from('contact_settings')
       .insert({
         type,

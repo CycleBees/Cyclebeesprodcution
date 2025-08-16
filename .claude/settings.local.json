@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit:*)",
+      "Bash(rm:*)",
+      "Bash(convert:*)",
+      "Bash(python:*)",
+      "Bash(cp:*)",
+      "Bash(for file in promotional.js dashboard.js coupon.js)",
+      "Bash(do sed -i '/^\\/\\/ Legacy SQLite connection/,/^\\/\\/ const db = new sqlite3/d' \"$file\")",
+      "Bash(done)",
+      "Bash(npm start)",
+      "Bash(PORT=3001 npm start)",
+      "Bash(PORT=8000 npm start)",
+      "Bash(curl:*)",
+      "Bash(npm run lint)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

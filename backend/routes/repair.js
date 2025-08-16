@@ -12,10 +12,6 @@ const router = express.Router();
 // Database connection
 const supabase = require('../database/supabase-connection');
 
-// Legacy SQLite connection (commented for rollback)
-// const sqlite3 = require('sqlite3').verbose();
-// const dbPath = process.env.DB_PATH || './database/cyclebees.db';
-// const db = new sqlite3.Database(dbPath);
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
