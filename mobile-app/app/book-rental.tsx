@@ -312,7 +312,13 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       marginBottom: 12,
     },
     inputContainer: {
-      marginBottom: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      marginTop: 2,
     },
     inputLabel: {
       fontSize: 14,
@@ -427,7 +433,11 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       flex: 1,
       fontSize: 14,
       color: colors.text,
-      paddingVertical: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderRadius: 6,
+      marginRight: 8,
     },
     applyCouponButton: {
       backgroundColor: colors.primary,
@@ -1450,20 +1460,21 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       backgroundColor: colors.border,
       marginHorizontal: 8,
     },
+    summaryDisplayText: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.text,
+      paddingVertical: 2,
+    },
+    bicycleDisplayContainer: {
+      flex: 1,
+    },
+    totalBreakdownContainer: {
+      flex: 1,
+    },
   });
 
-  const handleBackPress = () => {
-    if (onNavigate) {
-      onNavigate('home');
-    } else {
-      // Fallback to router navigation
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/main');
-      }
-    }
-  };
+  // Removed unused handleBackPress function
   const [step, setStep] = useState<'bicycles' | 'details' | 'summary'>('bicycles');
   const [loading, setLoading] = useState(false);
   const [loadingBicycles, setLoadingBicycles] = useState(false);
@@ -1840,7 +1851,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
     <View style={styles.stepContainer}>
       {/* Search Bar */}
       <View style={[styles.searchContainer, { marginTop: 8 }]}>
-                    <View style={[styles.searchInputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.text }]}>
+                    <View style={[styles.searchInputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
           <Ionicons name="search" size={18} color={colors.gray} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
@@ -1960,11 +1971,9 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
         {/* Contact Information Section */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
-          
           <View style={styles.inputGroup}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>Primary Contact Number</Text>
-            <View style={[styles.readOnlyInput, { backgroundColor: colors.cardBackground, borderColor: colors.text }]}>
+            <View style={[styles.readOnlyInput, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
               <Ionicons name="call" size={18} color={colors.primary} style={styles.inputIcon} />
               <Text style={[styles.readOnlyText, { color: colors.text }]}>{user?.phone}</Text>
             </View>
@@ -1972,7 +1981,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: colors.text }]}>Alternate Number (Optional)</Text>
-            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.text }]}>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
               <Ionicons name="call-outline" size={18} color={colors.gray} style={styles.inputIcon} />
               <TextInput
                 style={[styles.textInput, { color: colors.text }]}
@@ -1989,7 +1998,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
               <Text style={[styles.inputLabel, { color: colors.text }]}>Email Address *</Text>
             <View style={[
               styles.inputContainer, 
-              { backgroundColor: colors.cardBackground, borderColor: colors.text },
+              { backgroundColor: colors.cardBackground, borderColor: colors.border },
               errors.email && { borderColor: colors.error }
             ]}>
               <Ionicons name="mail" size={18} color={colors.gray} style={styles.inputIcon} />
@@ -2101,14 +2110,12 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
 
         {/* Delivery Information Section */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Delivery Information</Text>
-          
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: colors.text }]}>Delivery Address *</Text>
             <View style={[
               styles.inputContainer, 
               styles.textAreaContainer, 
-              { backgroundColor: colors.cardBackground, borderColor: colors.text },
+              { backgroundColor: colors.cardBackground, borderColor: colors.border },
               errors.delivery_address && { borderColor: colors.error }
             ]}>
               <Ionicons name="location" size={18} color={colors.gray} style={[styles.inputIcon, styles.textAreaIcon]} />
@@ -2136,7 +2143,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: colors.text }]}>Special Instructions (Optional)</Text>
-            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.text }]}>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
               <Ionicons name="document-text" size={18} color={colors.gray} style={[styles.inputIcon, styles.textAreaIcon]} />
               <TextInput
                 style={[styles.textInput, styles.textAreaInput, { color: colors.text }]}
@@ -2161,215 +2168,189 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       <Text style={[styles.stepSubtitle, { color: colors.gray }]}>Please review your rental request details before submitting</Text>
       
       <ScrollView style={styles.summaryContainer} showsVerticalScrollIndicator={false}>
-        {/* Bicycle Section */}
+        {/* Selected Bicycle */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Selected Bicycle</Text>
-          <View style={[styles.summaryCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-              <Ionicons name="bicycle" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Bicycle Details</Text>
-          </View>
-          <View style={styles.bicycleInfo}>
-              <Text style={[styles.summaryText, { color: colors.text }]}>{selectedBicycle?.name}</Text>
-            <Text style={[styles.bicycleModelText, { color: colors.gray }]}>{selectedBicycle?.model}</Text>
-              <Text style={[styles.summaryText, { color: colors.text }]}>{selectedBicycle?.description}</Text>
-            </View>
-          </View>
-        </View>
-
-
-
-        {/* Contact & Delivery Information */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact & Delivery</Text>
-          <View style={[styles.summaryCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.secondary }]}>
-              <Ionicons name="person" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Contact Information</Text>
-          </View>
-          <View style={styles.contactInfo}>
-            <View style={styles.contactRow}>
-                <Ionicons name="call" size={16} color={colors.primary} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{user?.phone}</Text>
-            </View>
-            {formData.alternate_number && (
-              <View style={styles.contactRow}>
-                  <Ionicons name="call-outline" size={16} color={colors.gray} style={styles.contactIcon} />
-                  <Text style={[styles.summaryText, { color: colors.text }]}>{formData.alternate_number}</Text>
-              </View>
-            )}
-            <View style={styles.contactRow}>
-                <Ionicons name="mail" size={16} color={colors.gray} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{formData.email}</Text>
-              </View>
-              
-              {/* Delivery Address in same section */}
-              <View style={styles.contactRow}>
-                <Ionicons name="location-outline" size={16} color={colors.secondary} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{formData.delivery_address}</Text>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Selected Bicycle</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="bicycle" size={18} color={colors.primary} style={styles.inputIcon} />
+              <View style={styles.bicycleDisplayContainer}>
+                <Text style={[styles.summaryDisplayText, { color: colors.text }]}>{selectedBicycle?.name}</Text>
+                <Text style={[styles.bicycleModelText, { color: colors.gray }]}>{selectedBicycle?.model}</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {formData.special_instructions && (
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryCardHeader}>
-                                <View style={[styles.summaryIconContainer, { backgroundColor: colors.success }]}>
-                  <Ionicons name="document-text" size={20} color={colors.background} />
-              </View>
-                <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Special Instructions</Text>
-            </View>
-            <View style={styles.notesInfo}>
-                <Ionicons name="chatbubble-outline" size={16} color={colors.secondary} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{formData.special_instructions}</Text>
+        {/* Contact Information */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Primary Contact Number</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="call" size={18} color={colors.primary} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>{user?.phone}</Text>
             </View>
           </View>
-        )}
 
-        {/* Rental Details Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Rental Details</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-                <Ionicons name="calendar" size={20} color={colors.background} />
+          {formData.alternate_number && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Alternate Contact Number</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+                <Ionicons name="call-outline" size={18} color={colors.gray} style={styles.inputIcon} />
+                <Text style={[styles.summaryDisplayText, { color: colors.text }]}>{formData.alternate_number}</Text>
               </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Rental Information</Text>
             </View>
-            <View style={styles.scheduleInfo}>
-              <View style={styles.scheduleRow}>
-                <Ionicons name="calendar-outline" size={16} color={colors.secondary} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>
-                  Duration: {formData.duration} {formData.duration_type === 'daily' ? 'Day(s)' : 'Week(s)'}
-                </Text>
+          )}
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Email Address</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="mail" size={18} color={colors.gray} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>{formData.email}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Delivery Information */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Delivery Address</Text>
+            <View style={[styles.inputContainer, styles.textAreaContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="location" size={18} color={colors.gray} style={[styles.inputIcon, styles.textAreaIcon]} />
+              <Text style={[styles.summaryDisplayText, styles.textAreaText, { color: colors.text }]}>{formData.delivery_address}</Text>
+            </View>
+          </View>
+
+          {formData.special_instructions && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Special Instructions</Text>
+              <View style={[styles.inputContainer, styles.textAreaContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+                <Ionicons name="document-text" size={18} color={colors.gray} style={[styles.inputIcon, styles.textAreaIcon]} />
+                <Text style={[styles.summaryDisplayText, styles.textAreaText, { color: colors.text }]}>{formData.special_instructions}</Text>
               </View>
-              <View style={styles.scheduleRow}>
-                <Ionicons name="pricetag" size={16} color={colors.secondary} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>
-                  Rate: ₹{formData.duration_type === 'daily' ? (selectedBicycle?.daily_rate || 0) : (selectedBicycle?.weekly_rate || 0)} per {formData.duration_type === 'daily' ? 'day' : 'week'}
-                </Text>
-              </View>
-              <View style={styles.scheduleRow}>
-                <Ionicons name="car" size={16} color={colors.secondary} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>
-                  Delivery Charge: ₹{selectedBicycle?.delivery_charge || 0}
-                </Text>
-              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Rental Details */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Rental Duration</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="calendar-outline" size={18} color={colors.primary} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>
+                {formData.duration} {formData.duration_type === 'daily' ? 'Day(s)' : 'Week(s)'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Rental Rate</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="pricetag" size={18} color={colors.primary} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>
+                ₹{formData.duration_type === 'daily' ? (selectedBicycle?.daily_rate || 0) : (selectedBicycle?.weekly_rate || 0)} per {formData.duration_type === 'daily' ? 'day' : 'week'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Delivery Charge</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="car" size={18} color={colors.primary} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>₹{selectedBicycle?.delivery_charge || 0}</Text>
             </View>
           </View>
         </View>
 
         {/* Coupon Section */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Discount</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-              <Ionicons name="pricetag" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Apply Coupon</Text>
-          </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Discount Coupon</Text>
             <View style={styles.couponInputContainer}>
-            <TextInput
-              style={styles.couponInput}
-              value={coupon}
-              onChangeText={setCoupon}
-              placeholder="Enter coupon code"
-              autoCapitalize="characters"
-                                  placeholderTextColor={colors.secondary}
-            />
-                              <TouchableOpacity 
-                  style={[styles.applyCouponButton, loadingCoupon && { opacity: 0.6 }]} 
-                  onPress={applyCoupon}
-                  disabled={loadingCoupon}
-                >
-                  {loadingCoupon ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.applyCouponText}>Apply</Text>
-                  )}
-                </TouchableOpacity>
-          </View>
-          
-
-          
+              <TextInput
+                style={[styles.couponInput, { backgroundColor: colors.cardBackground, borderColor: colors.border, color: colors.text }]}
+                value={coupon}
+                onChangeText={setCoupon}
+                placeholder="Enter coupon code"
+                autoCapitalize="characters"
+                placeholderTextColor={colors.secondary}
+              />
+              <TouchableOpacity 
+                style={[styles.applyCouponButton, loadingCoupon && { opacity: 0.6 }]} 
+                onPress={applyCoupon}
+                disabled={loadingCoupon}
+              >
+                {loadingCoupon ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.applyCouponText}>Apply</Text>
+                )}
+              </TouchableOpacity>
+            </View>
             {couponError ? <Text style={[styles.couponError, { color: colors.error }]}>{couponError}</Text> : null}
-          {appliedCoupon && (
-            <View style={styles.couponSuccessContainer}>
-                              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+            {appliedCoupon && (
+              <View style={styles.couponSuccessContainer}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                 <Text style={[styles.couponSuccess, { color: colors.success }]}>
-                Coupon "{appliedCoupon.code}" applied! Discount: ₹{discount}
-              </Text>
-            </View>
-          )}
-          </View>
-        </View>
-
-        {/* Payment Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Payment</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-              <Ionicons name="wallet" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Payment Method</Text>
-          </View>
-            <View style={styles.paymentOptionsContainer}>
-            <TouchableOpacity
-                style={[styles.paymentOption, styles.paymentOptionDisabled]}
-              disabled={true}
-            >
-                <Ionicons name="radio-button-off" size={20} color={colors.secondary} />
-              <Text style={[styles.paymentOptionTextDisabled, { color: colors.gray }]}>Online (Coming Soon)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={[styles.paymentOption, paymentMethod === 'offline' && styles.paymentOptionSelected]}
-              onPress={() => setPaymentMethod('offline')}
-            >
-                              <Ionicons name={paymentMethod === 'offline' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
-                <Text style={[styles.paymentOptionText, { color: colors.text }]}>Offline (Cash)</Text>
-            </TouchableOpacity>
-          </View>
-            <Text style={styles.paymentNotice}>
-            Online payment will be available soon. For now, please use offline payment.
-          </Text>
-          </View>
-        </View>
-
-        {/* Total Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Total Amount</Text>
-          <View style={styles.summaryTotalCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.success }]}>
-              <Ionicons name="cash" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryTotalTitle, { color: colors.text }]}>Payment Summary</Text>
-          </View>
-            <View style={styles.totalBreakdown}>
-            <View style={styles.totalRow}>
-                <Text style={[styles.totalItem, { color: colors.text }]}>Rental Cost</Text>
-                <Text style={[styles.totalValue, { color: colors.text }]}>₹{formData.duration_type === 'daily' ? (selectedBicycle?.daily_rate || 0) * formData.duration : (selectedBicycle?.weekly_rate || 0) * formData.duration}</Text>
-            </View>
-            <View style={styles.totalRow}>
-                <Text style={[styles.totalItem, { color: colors.text }]}>Delivery Charge</Text>
-                <Text style={[styles.totalValue, { color: colors.text }]}>₹{selectedBicycle?.delivery_charge || 0}</Text>
-            </View>
-            {discount > 0 && (
-              <View style={styles.totalRow}>
-                  <Text style={[styles.totalItem, { color: colors.text }]}>Discount</Text>
-                  <Text style={[styles.totalValue, { color: colors.success }]}>-₹{discount}</Text>
+                  Coupon &quot;{appliedCoupon.code}&quot; applied! Discount: ₹{discount}
+                </Text>
               </View>
             )}
-            <View style={styles.finalTotalRow}>
-              <Text style={[styles.finalTotalText, { color: colors.text }]}>Total</Text>
-              <Text style={[styles.finalTotalAmount, { color: colors.primary }]}>₹{calculateTotalWithDiscount()}</Text>
+          </View>
+        </View>
+
+        {/* Payment Method */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Payment Method</Text>
+            <View style={styles.paymentOptionsContainer}>
+              <TouchableOpacity
+                style={[styles.paymentOption, styles.paymentOptionDisabled]}
+                disabled={true}
+              >
+                <Ionicons name="radio-button-off" size={20} color={colors.secondary} />
+                <Text style={[styles.paymentOptionTextDisabled, { color: colors.gray }]}>Online (Coming Soon)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.paymentOption, paymentMethod === 'offline' && styles.paymentOptionSelected]}
+                onPress={() => setPaymentMethod('offline')}
+              >
+                <Ionicons name={paymentMethod === 'offline' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
+                <Text style={[styles.paymentOptionText, { color: colors.text }]}>Offline (Cash)</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.paymentNotice, { color: colors.gray }]}>
+              Online payment will be available soon. For now, please use offline payment.
+            </Text>
+          </View>
+        </View>
+
+        {/* Total Amount */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Payment Summary</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="calculator" size={18} color={colors.primary} style={styles.inputIcon} />
+              <View style={styles.totalBreakdownContainer}>
+                <View style={styles.totalRow}>
+                  <Text style={[styles.totalItem, { color: colors.text }]}>Rental Cost</Text>
+                  <Text style={[styles.totalValue, { color: colors.text }]}>₹{formData.duration_type === 'daily' ? (selectedBicycle?.daily_rate || 0) * formData.duration : (selectedBicycle?.weekly_rate || 0) * formData.duration}</Text>
+                </View>
+                <View style={styles.totalRow}>
+                  <Text style={[styles.totalItem, { color: colors.text }]}>Delivery Charge</Text>
+                  <Text style={[styles.totalValue, { color: colors.text }]}>₹{selectedBicycle?.delivery_charge || 0}</Text>
+                </View>
+                {discount > 0 && (
+                  <View style={styles.totalRow}>
+                    <Text style={[styles.totalItem, { color: colors.text }]}>Discount</Text>
+                    <Text style={[styles.totalValue, { color: colors.success }]}>-₹{discount}</Text>
+                  </View>
+                )}
+                <View style={[styles.finalTotalRow, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.finalTotalText, { color: colors.text }]}>Total</Text>
+                  <Text style={[styles.finalTotalAmount, { color: colors.primary }]}>₹{calculateTotalWithDiscount()}</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -2586,7 +2567,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
                                     </Text>
                                   </View>
                               ));
-                            } catch (e) {
+                            } catch {
                                 return (
                                   <Text style={[styles.modalSpecValue, { color: colors.text }]}>
                                     {selectedBicycleForModal.specifications}
