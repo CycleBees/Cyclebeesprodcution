@@ -5,9 +5,9 @@ import {
   SafeAreaView,
   Platform,
   Animated,
-} from 'react-native';
+ TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity, Text } from 'react-native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import AuthGuard from '@/components/AuthGuard';

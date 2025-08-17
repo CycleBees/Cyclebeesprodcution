@@ -29,6 +29,7 @@ import { SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS } from '@/constants/Styles'
 import { API_BASE_URL } from '@/config/api';
 import * as FileSystem from 'expo-file-system';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { getCardGridLayout } from '@/utils/responsive';
 
 
 interface RepairService {
@@ -245,7 +246,7 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
   };
 
   // ✅ NEW FUNCTION: Upload files using pre-signed S3 URLs with progress tracking
-  const uploadFilesToS3 = async (files: Array<{ uri: string; type: string; name: string }>): Promise<Array<{ s3Key: string; fileType: string; originalName: string; fileSize: number }>> => {
+  const uploadFilesToS3 = async (files: { uri: string; type: string; name: string }[]): Promise<{ s3Key: string; fileType: string; originalName: string; fileSize: number }[]> => {
     try {
       const token = await AsyncStorage.getItem('userToken');
       
@@ -703,7 +704,7 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
       }
 
       // Upload files to S3 using pre-signed URLs
-      let uploadedFiles: Array<{ s3Key: string; fileType: string; originalName: string; fileSize: number }> = [];
+      let uploadedFiles: { s3Key: string; fileType: string; originalName: string; fileSize: number }[] = [];
       if (filesToUpload.length > 0) {
         try {
           uploadedFiles = await uploadFilesToS3(filesToUpload);

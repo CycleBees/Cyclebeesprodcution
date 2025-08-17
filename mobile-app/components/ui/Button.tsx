@@ -13,11 +13,10 @@ import {
   TextStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { Colors } from '@/constants/Colors';
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS } from '@/constants/Styles';
 import { composeStyles, conditionalStyle } from '@/utils/styleUtils';
-import { useAppTheme } from '@/hooks/useAppTheme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';

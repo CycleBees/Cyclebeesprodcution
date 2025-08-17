@@ -21,6 +21,8 @@ import StepIndicator from '@/components/StepIndicator';
 import { API_BASE_URL } from '@/config/api';
 import Button from '@/components/ui/Button';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { getCardGridLayout } from '@/utils/responsive';
+import { TYPOGRAPHY, SPACING } from '@/constants/Styles';
 
 
 interface Bicycle {
@@ -33,11 +35,11 @@ interface Bicycle {
   weekly_rate: number;
   delivery_charge: number;
   specifications: string;
-  photos: Array<{
+  photos: {
     id: number;
     photo_url: string;
     display_order: number;
-  }>;
+  }[];
 }
 
 interface User {
@@ -63,6 +65,9 @@ interface BookRentalScreenProps {
 export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) {
   const router = useRouter();
   const { colors } = useAppTheme();
+  
+  // Get responsive grid dimensions for bicycle cards
+  const gridLayout = getCardGridLayout('bicycle');
 
   const styles = StyleSheet.create({
     container: {
@@ -91,8 +96,8 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       marginLeft: 8,
     },
     dashboardText: {
-      fontSize: 18,
-      fontWeight: '600',
+      fontSize: TYPOGRAPHY.lg,
+      fontWeight: TYPOGRAPHY.fontWeightSemibold,
       color: colors.text,
     },
     headerContent: {
@@ -126,15 +131,15 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       paddingBottom: Platform.OS === 'ios' ? 90 : 76, // Account for navbar
     },
     stepTitle: {
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: TYPOGRAPHY.lg,
+      fontWeight: TYPOGRAPHY.fontWeightBold,
       color: colors.text,
       marginBottom: 3,
     },
     stepSubtitle: {
-      fontSize: 13,
+      fontSize: TYPOGRAPHY.xs,
       color: colors.secondary,
-      marginBottom: 12,
+      marginBottom: SPACING.md - 4,
     },
     bicyclesList: {
       flex: 1,
@@ -157,7 +162,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
     },
     searchInput: {
       flex: 1,
-      fontSize: 14,
+      fontSize: TYPOGRAPHY.sm,
       color: colors.text,
       paddingVertical: 4,
     },
@@ -166,7 +171,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
     },
     clearSearchText: {
       color: colors.secondary,
-      fontSize: 12,
+      fontSize: TYPOGRAPHY.xs,
     },
     bicycleCard: {
       backgroundColor: colors.cardBackground,
@@ -301,8 +306,8 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       marginBottom: 24,
     },
     sectionTitle: {
-      fontSize: 16,
-      fontWeight: '600',
+      fontSize: TYPOGRAPHY.base,
+      fontWeight: TYPOGRAPHY.fontWeightSemibold,
       color: colors.text,
       marginBottom: 12,
     },
@@ -894,18 +899,19 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
     bicyclesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      gap: 12,
+      justifyContent: 'flex-start',
+      gap: gridLayout.gap,
       paddingBottom: 4,
     },
     bicycleCardCompact: {
-      width: (width - 40) / 2,
+      width: gridLayout.itemWidth,
       backgroundColor: colors.cardBackground,
-      borderRadius: 10,
+      borderRadius: SPACING.sm + 2, // 10px
       borderWidth: 2,
       borderColor: colors.border,
-      padding: 12,
+      padding: SPACING.sm + 4, // 12px
       minHeight: 140,
+      marginBottom: gridLayout.gap,
     },
     bicycleCardContentCompact: {
       position: 'relative',
@@ -930,8 +936,8 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       flex: 1,
     },
     bicycleNameCompact: {
-      fontSize: 13,
-      fontWeight: 'bold',
+      fontSize: TYPOGRAPHY.xs,
+      fontWeight: TYPOGRAPHY.fontWeightBold,
       color: colors.text,
       flex: 1,
       marginRight: 6,
@@ -2175,15 +2181,15 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
 
 
 
-        {/* Contact Information Section */}
+        {/* Contact & Delivery Information */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact & Delivery</Text>
           <View style={[styles.summaryCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
             <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.error }]}>
+              <View style={[styles.summaryIconContainer, { backgroundColor: colors.secondary }]}>
               <Ionicons name="person" size={20} color={colors.background} />
             </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Contact Details</Text>
+              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Contact Information</Text>
           </View>
           <View style={styles.contactInfo}>
             <View style={styles.contactRow}>
@@ -2200,23 +2206,13 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
                 <Ionicons name="mail" size={16} color={colors.gray} style={styles.contactIcon} />
                 <Text style={[styles.summaryText, { color: colors.text }]}>{formData.email}</Text>
               </View>
+              
+              {/* Delivery Address in same section */}
+              <View style={styles.contactRow}>
+                <Ionicons name="location-outline" size={16} color={colors.secondary} style={styles.contactIcon} />
+                <Text style={[styles.summaryText, { color: colors.text }]}>{formData.delivery_address}</Text>
+              </View>
             </View>
-          </View>
-        </View>
-
-        {/* Delivery Information Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Delivery Information</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-              <Ionicons name="location" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Delivery Address</Text>
-          </View>
-          <View style={styles.addressInfo}>
-                              <Ionicons name="location-outline" size={16} color={colors.secondary} style={styles.contactIcon} />
-              <Text style={[styles.summaryText, { color: colors.text }]}>{formData.delivery_address}</Text>
           </View>
         </View>
 
@@ -2234,7 +2230,6 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
             </View>
           </View>
         )}
-        </View>
 
         {/* Rental Details Section */}
         <View style={styles.sectionContainer}>

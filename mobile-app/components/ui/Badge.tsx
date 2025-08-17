@@ -12,7 +12,6 @@ import {
   TextStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '@/constants/Colors';
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from '@/constants/Styles';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -45,11 +44,8 @@ export default function Badge({
   lightColor,
   darkColor,
 }: BadgeProps) {
-  const backgroundColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    'background'
-  );
   const { colors } = useAppTheme();
+  const backgroundColor = lightColor || darkColor || colors.background;
 
   // Get badge styles based on variant, size, and outlined state
   const getBadgeStyle = (): ViewStyle => {

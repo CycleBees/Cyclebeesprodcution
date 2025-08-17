@@ -16,7 +16,6 @@ import {
   Text,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '@/constants/Colors';
 import { SPACING, BORDER_RADIUS, SHADOWS, Z_INDEX } from '@/constants/Styles';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -56,11 +55,8 @@ export default function Modal({
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  const backgroundColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    'cardBackground'
-  );
   const { colors } = useAppTheme();
+  const backgroundColor = lightColor || darkColor || colors.cardBackground;
 
   // Animation effects
   useEffect(() => {

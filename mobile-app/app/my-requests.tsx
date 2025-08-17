@@ -45,22 +45,22 @@ interface RepairRequest {
   start_time: string;
   end_time: string;
   rejection_note?: string;
-  services?: Array<{
+  services?: {
     id: number;
     name: string;
     description: string;
     special_instructions: string;
     price: number;
     discount_amount: number;
-  }>;
-  files?: Array<{
+  }[];
+  files?: {
     id: number;
     file_url: string;
     file_type: string;
     fileType?: string; // Alternative field name from backend
     display_order: number;
     downloadUrl?: string; // Added for direct image display
-  }>;
+  }[];
 }
 
 interface RentalRequest {

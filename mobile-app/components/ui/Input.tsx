@@ -14,7 +14,6 @@ import {
   TextInputProps,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '@/constants/Colors';
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from '@/constants/Styles';
 import { useAppTheme } from '@/hooks/useAppTheme';

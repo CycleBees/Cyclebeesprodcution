@@ -13,7 +13,9 @@
       "Bash(PORT=3001 npm start)",
       "Bash(PORT=8000 npm start)",
       "Bash(curl:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npx expo lint:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

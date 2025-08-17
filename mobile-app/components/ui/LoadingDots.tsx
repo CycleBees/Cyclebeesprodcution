@@ -5,7 +5,6 @@
 
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { SPACING } from '@/constants/Styles';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
@@ -24,8 +23,8 @@ export default function LoadingDots({
   darkColor,
   style,
 }: LoadingDotsProps) {
-  const defaultColor = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
   const { colors } = useAppTheme();
+  const defaultColor = lightColor || darkColor || colors.text;
   const dotColor = color || defaultColor;
   
   const dot1Anim = useRef(new Animated.Value(0)).current;
