@@ -15,7 +15,11 @@
       "Bash(curl:*)",
       "Bash(npm run lint)",
       "Bash(npx expo lint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx expo start:*)",
+      "Bash(grep:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

@@ -70,6 +70,35 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
   const router = useRouter();
   const { colors } = useAppTheme();
 
+  // Utility function to convert 24-hour format to AM/PM format
+  const formatTimeToAMPM = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Utility function to calculate duration between two times
+  const calculateDuration = (startTime: string, endTime: string) => {
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    const endTotalMinutes = endHours * 60 + endMinutes;
+    
+    const durationMinutes = endTotalMinutes - startTotalMinutes;
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours} hour${hours > 1 ? 's' : ''}`;
+    } else {
+      return `${minutes} min${minutes > 1 ? 's' : ''}`;
+    }
+  };
+
   const handleBackPress = () => {
     // Use onNavigate if available, otherwise fallback to router
     if (onNavigate) {
@@ -805,7 +834,7 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
 
   const getSelectedTimeSlotText = () => {
     const selectedSlot = timeSlots.find(s => s.id === formData.time_slot_id);
-    return selectedSlot ? `${selectedSlot.start_time} - ${selectedSlot.end_time}` : 'Select time slot';
+    return selectedSlot ? `${formatTimeToAMPM(selectedSlot.start_time)} - ${formatTimeToAMPM(selectedSlot.end_time)}` : 'Select time slot';
   };
 
   // ✅ NEW: Get available time slots based on selected date
@@ -932,8 +961,6 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
       <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
         {/* Contact Information Section */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
-          
         <View style={styles.inputGroup}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>Primary Contact Number</Text>
             <View style={[styles.readOnlyInput, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
@@ -988,8 +1015,6 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
 
         {/* Service Details Section */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Service Details</Text>
-          
           <View style={styles.inputGroup}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>Service Address *</Text>
             <View style={[
@@ -1223,87 +1248,73 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
       <Text style={[styles.stepSubtitle, { color: colors.gray }]}>Please review your repair request details before submitting</Text>
       
       <ScrollView style={styles.summaryContainer} showsVerticalScrollIndicator={false}>
-        {/* Services Section */}
+        {/* Selected Services */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Selected Services</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-              <Ionicons name="construct" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>{selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} selected</Text>
-          </View>
-          <View style={styles.servicesList}>
-            {selectedServices.map((service, index) => (
-                <View key={service.id} style={[styles.summaryItemRow, index === selectedServices.length - 1 && styles.lastItem]}>
-                <View style={styles.serviceInfo}>
-                    <Text style={[styles.summaryItemName, { color: colors.text }]}>{service.name}</Text>
-                  <Text style={[styles.serviceDescription, { color: colors.gray }]}>{service.description}</Text>
-                </View>
-                  <Text style={[styles.summaryItemPrice, { color: colors.primary }]}>₹{service.price}</Text>
-              </View>
-            ))}
-            </View>
-          </View>
-        </View>
-
-        {/* Contact Information Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.error }]}>
-              <Ionicons name="person" size={20} color={colors.background} />
-            </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Contact Details</Text>
-          </View>
-          <View style={styles.contactInfo}>
-            <View style={styles.contactRow}>
-                <Ionicons name="call" size={16} color={colors.primary} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{user?.phone}</Text>
-            </View>
-            {formData.alternate_number && (
-              <View style={styles.contactRow}>
-                  <Ionicons name="call-outline" size={16} color={colors.gray} style={styles.contactIcon} />
-                  <Text style={[styles.summaryText, { color: colors.text }]}>{formData.alternate_number}</Text>
-              </View>
-            )}
-            <View style={styles.contactRow}>
-                <Ionicons name="mail" size={16} color={colors.gray} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{formData.email}</Text>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Selected Services ({selectedServices.length})</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="construct" size={18} color={colors.primary} style={styles.inputIcon} />
+              <View style={styles.servicesListContainer}>
+                {selectedServices.map((service, index) => (
+                  <View key={service.id} style={[styles.serviceRow, index !== selectedServices.length - 1 && styles.serviceRowBorder]}>
+                    <View style={styles.serviceInfo}>
+                      <Text style={[styles.serviceName, { color: colors.text }]}>{service.name}</Text>
+                      <Text style={[styles.serviceDesc, { color: colors.gray }]}>{service.description}</Text>
+                    </View>
+                    <Text style={[styles.servicePrice, { color: colors.primary }]}>₹{service.price}</Text>
+                  </View>
+                ))}
               </View>
             </View>
           </View>
         </View>
 
-        {/* Service Details Section */}
+        {/* Contact Information */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Service Details</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-              <Ionicons name="location" size={20} color={colors.background} />
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Primary Contact Number</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="call" size={18} color={colors.primary} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>{user?.phone}</Text>
             </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Service Address</Text>
           </View>
-          <View style={styles.addressInfo}>
-              <Ionicons name="location-outline" size={16} color={colors.gray} style={styles.contactIcon} />
-              <Text style={[styles.summaryText, { color: colors.text }]}>{formData.address}</Text>
+
+          {formData.alternate_number && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Alternate Contact Number</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+                <Ionicons name="call-outline" size={18} color={colors.gray} style={styles.inputIcon} />
+                <Text style={[styles.summaryDisplayText, { color: colors.text }]}>{formData.alternate_number}</Text>
+              </View>
+            </View>
+          )}
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Email Address</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="mail" size={18} color={colors.gray} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>{formData.email}</Text>
+            </View>
           </View>
         </View>
+
+        {/* Service Details */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Service Address</Text>
+            <View style={[styles.inputContainer, styles.textAreaContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="location" size={18} color={colors.gray} style={[styles.inputIcon, styles.textAreaIcon]} />
+              <Text style={[styles.summaryDisplayText, styles.textAreaText, { color: colors.text }]}>{formData.address}</Text>
+            </View>
+          </View>
 
           {formData.notes && (
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryCardHeader}>
-                <View style={[styles.summaryIconContainer, { backgroundColor: colors.success }]}>
-                  <Ionicons name="document-text" size={20} color={colors.background} />
-            </View>
-                <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Special Instructions</Text>
-          </View>
-              <View style={styles.notesInfo}>
-                <Ionicons name="chatbubble-outline" size={16} color={colors.gray} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{formData.notes}</Text>
-            </View>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Special Instructions</Text>
+              <View style={[styles.inputContainer, styles.textAreaContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+                <Ionicons name="document-text" size={18} color={colors.gray} style={[styles.inputIcon, styles.textAreaIcon]} />
+                <Text style={[styles.summaryDisplayText, styles.textAreaText, { color: colors.text }]}>{formData.notes}</Text>
+              </View>
             </View>
           )}
         </View>
@@ -1337,27 +1348,35 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
           </View>
         )}
 
-        {/* Schedule Section */}
+        {/* Schedule Information */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Schedule</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCardHeader}>
-              <View style={[styles.summaryIconContainer, { backgroundColor: colors.primary }]}>
-                <Ionicons name="calendar" size={20} color={colors.background} />
-              </View>
-              <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Appointment Details</Text>
-            </View>
-            <View style={styles.scheduleInfo}>
-              <View style={styles.scheduleRow}>
-                <Ionicons name="calendar-outline" size={16} color={colors.gray} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{formData.preferred_date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
-              </View>
-              <View style={styles.scheduleRow}>
-                <Ionicons name="time" size={16} color={colors.gray} style={styles.contactIcon} />
-                <Text style={[styles.summaryText, { color: colors.text }]}>{timeSlots.find(s => s.id === formData.time_slot_id)?.start_time} - {timeSlots.find(s => s.id === formData.time_slot_id)?.end_time}</Text>
-              </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Preferred Date</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Ionicons name="calendar-outline" size={18} color={colors.gray} style={styles.inputIcon} />
+              <Text style={[styles.summaryDisplayText, { color: colors.text }]}>
+                {formData.preferred_date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </Text>
             </View>
           </View>
+
+          {formData.time_slot_id && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Time Slot</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+                <Ionicons name="time" size={18} color={colors.gray} style={styles.inputIcon} />
+                <Text style={[styles.summaryDisplayText, { color: colors.text }]}>
+                  {(() => {
+                    const selectedSlot = timeSlots.find(s => s.id === formData.time_slot_id);
+                    if (selectedSlot) {
+                      return `${formatTimeToAMPM(selectedSlot.start_time)} - ${formatTimeToAMPM(selectedSlot.end_time)} (${calculateDuration(selectedSlot.start_time, selectedSlot.end_time)})`;
+                    }
+                    return '';
+                  })()}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Coupon Section */}
@@ -1641,10 +1660,10 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
                       </View>
                       <View style={styles.enhancedTimeSlotRight}>
                         <Text style={[styles.enhancedTimeSlotTime, { color: colors.text }]}>
-                    {slot.start_time} - {slot.end_time}
+                    {formatTimeToAMPM(slot.start_time)} - {formatTimeToAMPM(slot.end_time)}
                   </Text>
                         <Text style={[styles.enhancedTimeSlotDuration, { color: colors.gray }]}>
-                          Duration: 2 hours
+                          Duration: {calculateDuration(slot.start_time, slot.end_time)}
                         </Text>
                       </View>
                     </View>
@@ -3282,234 +3301,46 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
-  // COMPACT: Enhanced Modal Styles
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.07)',
-  },
-  modalIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  enhancedDateOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 6,
-    minHeight: 54,
-  },
-  enhancedDateOptionContent: {
+  // Summary display styles to match detail page
+  summaryDisplayText: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  enhancedDateOptionLeft: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 36,
-  },
-  enhancedDateOptionDay: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    lineHeight: 22,
-  },
-  enhancedDateOptionMonth: {
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  enhancedDateOptionRight: {
-    flex: 1,
-    gap: 2,
-  },
-  enhancedDateOptionWeekday: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  enhancedDateOptionFullDate: {
-    fontSize: 11,
-  },
-  enhancedDateOptionBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    minWidth: 36,
-    alignItems: 'center',
-  },
-  enhancedDateOptionBadgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  enhancedCancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  enhancedCancelButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  // COMPACT: Enhanced Time Slot Styles
-  enhancedTimeSlotOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 6,
-    minHeight: 54,
-  },
-  enhancedTimeSlotContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  enhancedTimeSlotLeft: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 36,
-  },
-  enhancedTimeSlotRight: {
-    flex: 1,
-    gap: 2,
-  },
-  enhancedTimeSlotTime: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  enhancedTimeSlotDuration: {
-    fontSize: 11,
-  },
-  enhancedTimeSlotBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    minWidth: 48,
-    alignItems: 'center',
-  },
-  enhancedTimeSlotBadgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  // COMPACT: Schedule Card
-  scheduleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 6,
-  },
-  scheduleIconContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scheduleCard: {
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 10,
-    gap: 10,
-  },
-  scheduleItem: {
-    gap: 6,
-  },
-  scheduleItemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  scheduleItemLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  schedulePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-    minHeight: 40,
-  },
-  schedulePickerContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  schedulePickerLeft: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 24,
-  },
-  schedulePickerDay: {
     fontSize: 14,
-    fontWeight: 'bold',
-    lineHeight: 18,
+    paddingLeft: 8,
   },
-  schedulePickerMonth: {
-    fontSize: 9,
-    fontWeight: '500',
-    textTransform: 'uppercase',
-  },
-  schedulePickerRight: {
+  servicesListContainer: {
     flex: 1,
-    gap: 1,
+    paddingLeft: 8,
   },
-  schedulePickerWeekday: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  schedulePickerYear: {
-    fontSize: 9,
-  },
-  schedulePickerTime: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  schedulePickerDuration: {
-    fontSize: 9,
-  },
-  scheduleErrorContainer: {
+  serviceRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 6,
-    borderRadius: 6,
-    borderLeftWidth: 3,
-    gap: 4,
-    marginTop: 2,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
   },
-  scheduleErrorText: {
-    fontSize: 10,
-    flex: 1,
+  serviceRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
-  // ✅ NEW: Request Details Modal Style Matching
-  modalCloseButton: {
-    padding: 4,
+  serviceName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  serviceDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  servicePrice: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  textAreaText: {
+    textAlignVertical: 'top',
+    minHeight: 20,
   },
   modalBody: {
+    padding: 16,
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
   modalBottomButton: {
     paddingVertical: 12,
