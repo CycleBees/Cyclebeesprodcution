@@ -11,7 +11,8 @@ import {
   Dimensions,
   Platform,
   Modal,
-  Animated
+  Animated,
+  TouchableWithoutFeedback
 } from 'react-native';
 import CachedImage, { DefaultPlaceholder, DefaultFallback } from '../components/CachedImage';
 import CachedVideo, { DefaultVideoPlaceholder, DefaultVideoFallback } from '../components/CachedVideo';
@@ -164,7 +165,50 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredServices, setFilteredServices] = useState<RepairService[]>([]);
 
+  // Category filtering
+  const [selectedCategory, setSelectedCategory] = useState<'K' | 'R' | 'P'>('R'); // Default to Regular
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Category definitions
+  const categories = [
+    { key: 'K' as const, label: 'Kids Repair', icon: 'bicycle' as const },
+    { key: 'R' as const, label: 'Regular Bicycle Repair', icon: 'construct' as const },
+    { key: 'P' as const, label: 'Professional Bicycle Repair', icon: 'settings' as const }
+  ];
+
+  // Get filtered services based on category and search
+  const getFilteredServices = () => {
+    // First filter by category
+    const categoryFiltered = repairServices.filter(service => {
+      const match = service.name.match(/^\{([KRP])\}(.+)$/);
+      if (match) {
+        const [, category] = match;
+        return category === selectedCategory;
+      }
+      return false; // Skip services without proper format
+    }).map(service => ({
+      ...service,
+      displayName: service.name.replace(/^\{[KRP]\}/, ''), // Remove prefix for display
+      name: service.name.replace(/^\{[KRP]\}/, '') // Update name for search functionality
+    }));
+
+    // Then filter by search query
+    if (searchQuery.trim() === '') {
+      return categoryFiltered;
+    } else {
+      return categoryFiltered.filter(service =>
+        service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+  };
+
+  // Get current category label
+  const getCurrentCategoryLabel = () => {
+    return categories.find(cat => cat.key === selectedCategory)?.label || 'Regular Bicycle Repair';
+  };
 
   // ✅ UTILITY FUNCTION TO GET FILE TYPE
   const getFileTypeFromUri = (uri: string): string => {
@@ -361,18 +405,32 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
     fetchMechanicCharge();
   }, []);
 
-  // Filter services based on search query
+  // Filter services based on category and search query
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredServices(repairServices);
-    } else {
-      const filtered = repairServices.filter(service =>
-        service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        service.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredServices(filtered);
-    }
-  }, [searchQuery, repairServices]);
+    // Filter by category first
+    const categoryFiltered = repairServices.filter(service => {
+      const match = service.name.match(/^\{([KRP])\}(.+)$/);
+      if (match) {
+        const [, category] = match;
+        return category === selectedCategory;
+      }
+      return false;
+    }).map(service => ({
+      ...service,
+      displayName: service.name.replace(/^\{[KRP]\}/, ''),
+      name: service.name.replace(/^\{[KRP]\}/, '')
+    }));
+
+    // Then filter by search query
+    const filtered = searchQuery.trim() === '' 
+      ? categoryFiltered 
+      : categoryFiltered.filter(service =>
+          service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+    setFilteredServices(filtered);
+  }, [searchQuery, repairServices, selectedCategory]);
 
   const getCurrentStepIndex = () => {
     return STEPS.findIndex(s => s.id === step);
@@ -890,7 +948,8 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
   }, []);
 
   const renderServicesStep = () => (
-    <View style={styles.stepContainer}>
+    <TouchableWithoutFeedback onPress={() => setShowCategoryDropdown(false)}>
+      <View style={styles.stepContainer}>
       {/* Search Bar */}
       <View style={[styles.searchContainer, { marginTop: 8 }]}>
         <View style={[styles.searchInputContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
@@ -914,10 +973,73 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
         </View>
       </View>
 
+      {/* Category Dropdown */}
+      <View style={styles.categoryContainer}>
+        <TouchableOpacity
+          style={[styles.categoryDropdown, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
+          onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+        >
+          <View style={styles.categoryDropdownContent}>
+            <Ionicons 
+              name={categories.find(cat => cat.key === selectedCategory)?.icon || 'construct'} 
+              size={18} 
+              color={colors.primary} 
+              style={styles.categoryIcon} 
+            />
+            <Text style={[styles.categoryText, { color: colors.text }]}>
+              {getCurrentCategoryLabel()}
+            </Text>
+            <Ionicons 
+              name={showCategoryDropdown ? 'chevron-up' : 'chevron-down'} 
+              size={16} 
+              color={colors.gray} 
+            />
+          </View>
+        </TouchableOpacity>
+
+        {/* Dropdown Options */}
+        {showCategoryDropdown && (
+          <View style={[styles.categoryDropdownMenu, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.key}
+                style={[
+                  styles.categoryOption,
+                  selectedCategory === category.key && { backgroundColor: colors.background }
+                ]}
+                onPress={() => {
+                  setSelectedCategory(category.key);
+                  setShowCategoryDropdown(false);
+                }}
+              >
+                <Ionicons name={category.icon} size={18} color={colors.primary} style={styles.categoryIcon} />
+                <Text style={[styles.categoryOptionText, { color: colors.text }]}>
+                  {category.label}
+                </Text>
+                {selectedCategory === category.key && (
+                  <Ionicons name="checkmark" size={16} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
       <View style={styles.servicesGrid}>
-        {filteredServices.map((service) => {
-          const isSelected = selectedServices.some(s => s.id === service.id);
-          return (
+        {filteredServices.length === 0 ? (
+          <View style={styles.emptyServicesContainer}>
+            <Ionicons name="construct-outline" size={48} color={colors.gray} />
+            <Text style={[styles.emptyServicesText, { color: colors.gray }]}>
+              No services available in {getCurrentCategoryLabel()}
+            </Text>
+            <Text style={[styles.emptyServicesSubtext, { color: colors.gray }]}>
+              Try selecting a different category or check back later
+            </Text>
+          </View>
+        ) : (
+          filteredServices.map((service) => {
+            const isSelected = selectedServices.some(s => s.id === service.id);
+            return (
             <TouchableOpacity
               key={service.id}
               style={[
@@ -941,7 +1063,8 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
               </View>
             </TouchableOpacity>
           );
-        })}
+          })
+        )}
       </View>
 
       {errors.services && (
@@ -950,7 +1073,8 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
           <Text style={[styles.errorText, { color: colors.error }]}>{errors.services}</Text>
         </View>
       )}
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 
   const renderDetailsStep = () => (
@@ -1407,7 +1531,7 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
             <View style={styles.couponSuccessContainer}>
               <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                 <Text style={[styles.couponSuccess, { color: colors.success }]}>
-                Coupon "{appliedCoupon.code}" applied! Discount: ₹{discount}
+                Coupon &quot;{appliedCoupon.code}&quot; applied! Discount: ₹{discount}
               </Text>
             </View>
           )}
@@ -2002,6 +2126,82 @@ const styles = StyleSheet.create({
   },
   clearSearchButton: {
     padding: 4,
+  },
+  // Category dropdown styles
+  categoryContainer: {
+    marginBottom: 16,
+    position: 'relative',
+    zIndex: 1000,
+  },
+  categoryDropdown: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 4,
+  },
+  categoryDropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  categoryIcon: {
+    marginRight: 8,
+  },
+  categoryText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  categoryDropdownMenu: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderRadius: 12,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 1001,
+  },
+  categoryOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  categoryOptionText: {
+    flex: 1,
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  // Empty state styles
+  emptyServicesContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    width: '100%',
+  },
+  emptyServicesText: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptyServicesSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    opacity: 0.8,
   },
   servicesGrid: {
     flex: 1,
@@ -3133,9 +3333,9 @@ const styles = StyleSheet.create({
     minWidth: 50,
   },
   schedulePickerDay: {
-    fontSize: 24,
+    fontSize: 14,
     fontWeight: 'bold',
-    lineHeight: 28,
+    lineHeight: 18,
   },
   schedulePickerMonth: {
     fontSize: 12,
@@ -3213,9 +3413,9 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   enhancedDateOptionDay: {
-    fontSize: 28,
+    fontSize: 14,
     fontWeight: 'bold',
-    lineHeight: 32,
+    lineHeight: 18,
   },
   enhancedDateOptionMonth: {
     fontSize: 14,
@@ -3227,7 +3427,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   enhancedDateOptionWeekday: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
   },
   enhancedDateOptionFullDate: {
@@ -3283,11 +3483,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   enhancedTimeSlotTime: {
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: '600',
   },
   enhancedTimeSlotDuration: {
-    fontSize: 14,
+    fontSize: 11,
   },
   enhancedTimeSlotBadge: {
     paddingHorizontal: 8,
