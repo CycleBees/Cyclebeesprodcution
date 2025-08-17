@@ -728,52 +728,44 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       fontWeight: '600',
     },
     confirmationModalContent: {
-      backgroundColor: colors.background,
       borderRadius: 16,
-      padding: 24,
-      margin: 20,
-      maxWidth: '90%',
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 5,
+      padding: 0,
+      width: '100%',
+      maxWidth: 380,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.5,
+      shadowRadius: 16,
+      elevation: 12,
+      overflow: 'hidden',
     },
     confirmationModalTitle: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: 'bold',
-      color: colors.text,
       textAlign: 'center',
-      marginBottom: 20,
-    },
-    confirmationModalSubtitle: {
-      fontSize: 16,
-      color: colors.text,
-      textAlign: 'center',
-      marginBottom: 24,
     },
     confirmationDetailRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
+      alignItems: 'flex-start',
     },
     confirmationDetailLeft: {
       flexDirection: 'row',
       alignItems: 'center',
+      gap: 6,
       flex: 1,
     },
     confirmationDetailLabel: {
-      fontSize: 14,
-      color: colors.text,
-      marginLeft: 8,
+      fontSize: 13,
+      fontWeight: '500',
     },
     confirmationDetailValue: {
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: '600',
-      color: colors.text,
       textAlign: 'right',
       flex: 1,
+      marginLeft: 6,
+      lineHeight: 18,
     },
     confirmationTotalRow: {
       flexDirection: 'row',
@@ -785,45 +777,54 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       marginTop: 12,
     },
     confirmationTotalLabel: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: colors.text,
+      fontSize: 13,
+      fontWeight: '600',
     },
     confirmationTotalValue: {
-      fontSize: 18,
+      fontSize: 14,
       fontWeight: 'bold',
-      color: colors.primary,
+      textAlign: 'right',
+      flex: 1,
+      marginLeft: 6,
     },
     confirmationModalButtons: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: 24,
+      marginTop: 16,
       gap: 12,
     },
     confirmationModalCancelButton: {
       flex: 1,
-      paddingVertical: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
+      flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.cardBackground,
+      justifyContent: 'center',
+      gap: 4,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      borderWidth: 1,
     },
     confirmationModalCancelText: {
-      color: colors.text,
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '600',
     },
     confirmationModalConfirmButton: {
       flex: 1,
-      paddingVertical: 12,
-      borderRadius: 8,
+      flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      gap: 4,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      shadowColor: '#FFD11E',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+      elevation: 4,
     },
     confirmationModalConfirmText: {
-      color: colors.background,
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '600',
     },
     totalBarEnhanced: {
@@ -1265,9 +1266,7 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       alignItems: 'center',
       padding: 20,
       paddingBottom: 16,
-      backgroundColor: colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
     },
     confirmationIconContainer: {
       width: 48,
@@ -1291,18 +1290,14 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
       gap: 8,
     },
     confirmationDetailCard: {
-      backgroundColor: colors.cardBackground,
       borderRadius: 10,
       padding: 12,
       borderWidth: 1,
-      borderColor: colors.border,
     },
     confirmationTotalCard: {
-      backgroundColor: colors.cardBackground,
       borderRadius: 10,
       padding: 12,
       borderWidth: 1,
-      borderColor: colors.primary,
     },
     confirmationModalFooter: {
       flexDirection: 'row',
@@ -2617,47 +2612,49 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
               {/* Body with Details */}
               <View style={styles.confirmationModalBody}>
                 <View style={styles.confirmationModalDetails}>
-                  <View style={styles.confirmationDetailCard}>
+                  <View style={[styles.confirmationDetailCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
                     <View style={styles.confirmationDetailRow}>
                       <View style={styles.confirmationDetailLeft}>
                         <Ionicons name="bicycle-outline" size={16} color={colors.primary} />
-                        <Text style={styles.confirmationDetailLabel}>Bicycle</Text>
+                        <Text style={[styles.confirmationDetailLabel, { color: colors.text }]}>Bicycle</Text>
                       </View>
-                      <Text style={styles.confirmationDetailValue}>{selectedBicycle?.name}</Text>
+                      <Text style={[styles.confirmationDetailValue, { color: colors.text }]} numberOfLines={2}>
+                        {selectedBicycle?.name}
+                      </Text>
                     </View>
                   </View>
                   
-                  <View style={styles.confirmationDetailCard}>
+                  <View style={[styles.confirmationDetailCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
                     <View style={styles.confirmationDetailRow}>
                       <View style={styles.confirmationDetailLeft}>
                         <Ionicons name="calendar-outline" size={16} color={colors.primary} />
-                        <Text style={styles.confirmationDetailLabel}>Duration</Text>
+                        <Text style={[styles.confirmationDetailLabel, { color: colors.text }]}>Duration</Text>
                       </View>
-                      <Text style={styles.confirmationDetailValue}>
+                      <Text style={[styles.confirmationDetailValue, { color: colors.text }]}>
                         {formData.duration} {formData.duration_type === 'daily' ? 'Day(s)' : 'Week(s)'}
                       </Text>
                     </View>
                   </View>
                   
-                                  <View style={styles.confirmationDetailCard}>
-                  <View style={styles.confirmationDetailRow}>
-                    <View style={styles.confirmationDetailLeft}>
-                      <Ionicons name="location-outline" size={16} color={colors.primary} />
-                      <Text style={styles.confirmationDetailLabel}>Address</Text>
-                    </View>
-                    <Text style={styles.confirmationDetailValue} numberOfLines={3}>
-                      {formData.delivery_address}
-                    </Text>
-                  </View>
-                </View>
-                  
-                  <View style={styles.confirmationTotalCard}>
+                  <View style={[styles.confirmationDetailCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
                     <View style={styles.confirmationDetailRow}>
                       <View style={styles.confirmationDetailLeft}>
-                        <Ionicons name="pricetag-outline" size={16} color={colors.success} />
-                        <Text style={styles.confirmationTotalLabel}>Total</Text>
+                        <Ionicons name="location-outline" size={16} color={colors.primary} />
+                        <Text style={[styles.confirmationDetailLabel, { color: colors.text }]}>Address</Text>
                       </View>
-                      <Text style={styles.confirmationTotalValue}>₹{calculateTotalWithDiscount()}</Text>
+                      <Text style={[styles.confirmationDetailValue, { color: colors.text }]} numberOfLines={3}>
+                        {formData.delivery_address}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View style={[styles.confirmationTotalCard, { backgroundColor: colors.success, borderColor: colors.success }]}>
+                    <View style={styles.confirmationDetailRow}>
+                      <View style={styles.confirmationDetailLeft}>
+                        <Ionicons name="pricetag-outline" size={16} color={colors.background} />
+                        <Text style={[styles.confirmationTotalLabel, { color: colors.background }]}>Total</Text>
+                      </View>
+                      <Text style={[styles.confirmationTotalValue, { color: colors.background }]}>₹{calculateTotalWithDiscount()}</Text>
                     </View>
                   </View>
                 </View>
@@ -2666,20 +2663,26 @@ export default function BookRentalScreen({ onNavigate }: BookRentalScreenProps) 
               {/* Footer with Action Buttons */}
               <View style={styles.confirmationModalFooter}>
                 <TouchableOpacity
-                  style={styles.confirmationModalCancelButton}
+                  style={[
+                    styles.confirmationModalCancelButton, 
+                    { backgroundColor: colors.cardBackground, borderColor: colors.border }
+                  ]}
                   onPress={() => setShowConfirmationModal(false)}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="close-outline" size={16} color={colors.secondary} />
-                  <Text style={styles.confirmationModalCancelText}>Cancel</Text>
+                  <Ionicons name="close-outline" size={16} color={colors.gray} />
+                  <Text style={[styles.confirmationModalCancelText, { color: colors.gray }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.confirmationModalConfirmButton}
+                  style={[
+                    styles.confirmationModalConfirmButton, 
+                    { backgroundColor: colors.primary }
+                  ]}
                   onPress={confirmSubmit}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="checkmark-outline" size={16} color={colors.background} />
-                  <Text style={styles.confirmationModalConfirmText}>Confirm</Text>
+                  <Text style={[styles.confirmationModalConfirmText, { color: colors.background }]}>Confirm</Text>
                 </TouchableOpacity>
               </View>
             </View>
