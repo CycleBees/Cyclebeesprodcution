@@ -11,7 +11,7 @@
 // Look for your local network IP (usually starts with 192.168.x.x or 10.x.x.x)
 // Update the DEVELOPMENT_API_URL below with your computer's IP address
 
-const DEVELOPMENT_API_URL = 'http://192.168.0.103:3000'; // ✅ Your computer's IP address
+const DEVELOPMENT_API_URL = 'http://192.168.1.45:3000'; // ✅ Your computer's IP address
 
 const getApiUrl = () => {
   // Check if we're in development mode

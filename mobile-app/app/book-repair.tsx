@@ -28,6 +28,7 @@ import { ServiceCard, FileUpload, Button, Card, Input, Badge } from '@/component
 import { Colors } from '@/constants/Colors';
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS } from '@/constants/Styles';
 import { API_BASE_URL } from '@/config/api';
+import RazorpayPayment from './components/RazorpayPayment';
 import * as FileSystem from 'expo-file-system';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { getCardGridLayout } from '@/utils/responsive';
@@ -160,6 +161,13 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
   
   // Confirmation modal state
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  
+  // Payment confirmation modal state
+  const [showPaymentConfirmModal, setShowPaymentConfirmModal] = useState(false);
+  
+  // Razorpay payment state
+  const [showRazorpayModal, setShowRazorpayModal] = useState(false);
+  const [paymentData, setPaymentData] = useState<any>(null);
   
   // Search functionality
   const [searchQuery, setSearchQuery] = useState('');
@@ -481,8 +489,13 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
 
       handleStepChange('summary');
     } else if (step === 'summary') {
-      // Call handleSubmit when on summary step
-      handleSubmit();
+      // For online payments, show confirmation modal first
+      if (paymentMethod === 'online') {
+        setShowPaymentConfirmModal(true);
+      } else {
+        // For offline payments, submit directly
+        handleSubmit();
+      }
     }
   };
 
@@ -671,6 +684,23 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
   const calculateTotal = () => {
     const servicesTotal = selectedServices.reduce((sum, service) => sum + service.price, 0);
     return servicesTotal + mechanicCharge;
+  };
+
+  // New functions for payment breakdown
+  const getServiceCharge = () => {
+    return mechanicCharge; // Fixed service charge
+  };
+
+  const getOtherCharges = () => {
+    return selectedServices.reduce((sum, service) => sum + service.price, 0); // Variable other charges
+  };
+
+  const getServiceChargeAfterDiscount = () => {
+    // For online payments, only service charge matters
+    if (paymentMethod === 'online') {
+      return Math.max(0, mechanicCharge - discount);
+    }
+    return mechanicCharge;
   };
 
   const applyCoupon = async () => {
@@ -875,6 +905,149 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
     } catch (error) {
       console.error('❌ Network error:', error);
       Alert.alert('Error', 'Network error. Please check your connection and try again.');
+      setLoading(false);
+      setIsUploading(false);
+    }
+  };
+
+  // Handle payment success from Razorpay
+  const handlePaymentSuccess = async (paymentData: any) => {
+    try {
+      console.log('Payment successful:', paymentData);
+      setPaymentData(paymentData);
+      setShowRazorpayModal(false);
+      
+      // Now submit the repair request with payment verification
+      await submitRepairRequestWithPayment(paymentData);
+      
+    } catch (error) {
+      console.error('Error handling payment success:', error);
+      Alert.alert('Error', 'Payment was successful but failed to submit request. Please contact support.');
+    }
+  };
+
+  // Handle payment failure from Razorpay
+  const handlePaymentFailure = (error: string) => {
+    console.error('Payment failed:', error);
+    setShowRazorpayModal(false);
+    Alert.alert('Payment Failed', error);
+  };
+
+  // Submit repair request with verified payment
+  const submitRepairRequestWithPayment = async (paymentData: any) => {
+    setLoading(true);
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStatus('Preparing files...');
+    
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      
+      // Prepare files for upload (same as confirmSubmit)
+      const filesToUpload = [];
+      
+      // Process photos
+      for (const photo of selectedPhotos) {
+        const fileType = getFileTypeFromUri(photo.uri);
+        const fileName = `repair_photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileType}`;
+        filesToUpload.push({ uri: photo.uri, type: `image/${fileType}`, name: fileName });
+      }
+      
+      // Process videos
+      for (const video of selectedVideos) {
+        const fileType = getFileTypeFromUri(video.uri);
+        const fileName = `repair_video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileType}`;
+        filesToUpload.push({ uri: video.uri, type: `video/${fileType}`, name: fileName });
+      }
+
+      // Upload files to S3 if any
+      let uploadedFiles = [];
+      if (filesToUpload.length > 0) {
+        setUploadStatus('Uploading files...');
+        uploadedFiles = await uploadFilesToS3(filesToUpload);
+      }
+
+      setUploadStatus('Submitting request...');
+      setUploadProgress(90);
+
+      // Prepare request data for paid submission
+      const requestData = {
+        contactNumber: formData.contact_number,
+        alternateNumber: formData.alternate_number,
+        email: formData.email,
+        notes: formData.notes,
+        address: formData.address,
+        preferredDate: formData.preferred_date.toISOString().split('T')[0],
+        timeSlotId: formData.time_slot_id,
+        totalAmount: calculateTotal(),
+        services: selectedServices.map(service => ({
+          serviceId: service.id,
+          price: service.price,
+          discountAmount: 0
+        })),
+        files: uploadedFiles,
+        // Add payment verification data
+        razorpay_payment_id: paymentData.razorpay_payment_id,
+        razorpay_order_id: paymentData.razorpay_order_id,
+        razorpay_signature: paymentData.razorpay_signature
+      };
+
+      console.log('Submitting repair request with payment:', {
+        ...requestData,
+        filesCount: uploadedFiles.length,
+        paymentData: paymentData
+      });
+
+      // Submit to the paid endpoint
+      const response = await fetch(`${API_BASE_URL}/api/repair/requests/with-payment`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      console.log('Payment submission response status:', response.status);
+
+      const data = await response.json();
+      console.log('Payment submission response data:', data);
+
+      if (response.ok && data.success) {
+        console.log('✅ Repair request with payment submitted successfully');
+        setLoading(false);
+        setIsUploading(false);
+        
+        Alert.alert(
+          'Success!', 
+          'Your repair request has been submitted successfully with payment. You will receive a confirmation shortly.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setTimeout(() => {
+                  if (onNavigate) {
+                    onNavigate('my-requests:repair');
+                  } else {
+                    router.replace('/my-requests');
+                  }
+                }, 500);
+              }
+            }
+          ]
+        );
+        return;
+      } else {
+        console.error('❌ Backend error:', data);
+        throw new Error(data.message || 'Failed to submit repair request with payment');
+      }
+
+    } catch (error) {
+      console.error('❌ Error submitting paid repair request:', error);
+      Alert.alert(
+        'Submission Error', 
+        'Payment was successful but failed to submit request. Please contact support with your payment details.'
+      );
       setLoading(false);
       setIsUploading(false);
     }
@@ -1549,27 +1722,34 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
               <Text style={[styles.summaryCardTitle, { color: colors.text }]}>Payment Method</Text>
           </View>
             <View style={styles.paymentOptionsContainer}>
-            <TouchableOpacity
-                style={[styles.paymentOption, { backgroundColor: colors.cardBackground, borderColor: colors.border }, styles.paymentOptionDisabled]}
-              disabled={true}
-            >
-                <Ionicons name="radio-button-off" size={20} color={colors.gray} />
-              <Text style={[styles.paymentOptionTextDisabled, { color: colors.gray }]}>Online (Coming Soon)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              <TouchableOpacity
+                style={[
+                  styles.paymentOption, 
+                  { backgroundColor: colors.cardBackground, borderColor: colors.border },
+                  paymentMethod === 'online' && { borderColor: colors.primary, backgroundColor: colors.background }
+                ]}
+                onPress={() => setPaymentMethod('online')}
+              >
+                <Ionicons name={paymentMethod === 'online' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
+                <Text style={[styles.paymentOptionText, { color: colors.text }]}>Online (Service Charge Only)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[
                   styles.paymentOption, 
                   { backgroundColor: colors.cardBackground, borderColor: colors.border },
                   paymentMethod === 'offline' && { borderColor: colors.primary, backgroundColor: colors.background }
                 ]}
-              onPress={() => setPaymentMethod('offline')}
-            >
-              <Ionicons name={paymentMethod === 'offline' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
+                onPress={() => setPaymentMethod('offline')}
+              >
+                <Ionicons name={paymentMethod === 'offline' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
                 <Text style={[styles.paymentOptionText, { color: colors.text }]}>Offline (Cash)</Text>
-            </TouchableOpacity>
-          </View>
-                        <Text style={[styles.paymentNotice, { color: colors.gray }]}>
-              Online payment will be available soon. For now, please use offline payment.
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.paymentNotice, { color: colors.gray }]}>
+              {paymentMethod === 'online' 
+                ? 'Pay service charge online. Other charges paid directly to mechanic.'
+                : 'Pay total amount directly to the mechanic in cash.'
+              }
             </Text>
           </View>
         </View>
@@ -1585,23 +1765,45 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
               <Text style={[styles.summaryTotalTitle, { color: colors.text }]}>Payment Summary</Text>
           </View>
             <View style={styles.totalBreakdown}>
-            <View style={styles.totalRow}>
-                <Text style={[styles.totalItem, { color: colors.text }]}>Services</Text>
-                <Text style={[styles.totalValue, { color: colors.text }]}>₹{selectedServices.reduce((sum, s) => sum + s.price, 0)}</Text>
-            </View>
-            <View style={styles.totalRow}>
-                <Text style={[styles.totalItem, { color: colors.text }]}>Mechanic Charge</Text>
-                <Text style={[styles.totalValue, { color: colors.text }]}>₹{mechanicCharge}</Text>
-            </View>
-            {discount > 0 && (
+              {/* Service Charge - Fixed, must pay online */}
               <View style={styles.totalRow}>
+                <View style={styles.chargeTypeContainer}>
+                  <Text style={[styles.totalItem, { color: colors.text }]}>Service Charge</Text>
+                  <Text style={[styles.chargeTypeLabel, { color: colors.primary }]}>(Fixed)</Text>
+                </View>
+                <Text style={[styles.totalValue, { color: colors.primary }]}>₹{getServiceCharge()}</Text>
+              </View>
+              
+              {/* Other Charges - Variable, estimated */}
+              <View style={styles.totalRow}>
+                <View style={styles.chargeTypeContainer}>
+                  <Text style={[styles.totalItem, { color: colors.text }]}>Other Charges</Text>
+                  <Text style={[styles.chargeTypeLabel, { color: colors.gray }]}>(Estimated)</Text>
+                </View>
+                <Text style={[styles.totalValue, { color: colors.gray }]}>₹{getOtherCharges()}</Text>
+              </View>
+              
+              {discount > 0 && (
+                <View style={styles.totalRow}>
                   <Text style={[styles.totalItem, { color: colors.text }]}>Discount</Text>
                   <Text style={[styles.totalValue, { color: colors.success }]}>-₹{discount}</Text>
+                </View>
+              )}
+              
+              <View style={styles.finalTotalRow}>
+                <Text style={[styles.finalTotalText, { color: colors.text }]}>Total</Text>
+                <Text style={[styles.finalTotalAmount, { color: colors.success }]}>₹{calculateTotalWithDiscount()}</Text>
               </View>
-            )}
-            <View style={styles.finalTotalRow}>
-              <Text style={[styles.finalTotalText, { color: colors.text }]}>Total</Text>
-              <Text style={[styles.finalTotalAmount, { color: colors.success }]}>₹{calculateTotalWithDiscount()}</Text>
+              
+              {/* Payment breakdown note */}
+              <View style={styles.paymentBreakdownNote}>
+                <Ionicons name="information-circle-outline" size={16} color={colors.secondary} />
+                <Text style={[styles.breakdownNoteText, { color: colors.secondary }]}>
+                  {paymentMethod === 'online' 
+                    ? 'Online: Pay service charge now. Other charges paid to mechanic later.'
+                    : 'Service charge is fixed. Other charges are estimated and may vary.'
+                  }
+                </Text>
               </View>
             </View>
           </View>
@@ -1651,10 +1853,10 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
           />
         )}
         <Button
-          title={step === 'summary' ? 'Submit' : 'Next'}
+          title={step === 'summary' ? (paymentMethod === 'online' ? `Pay ₹${getServiceChargeAfterDiscount()}` : 'Submit') : 'Next'}
           onPress={nextStep}
           variant="primary"
-          icon={step === 'summary' ? 'checkmark' : 'arrow-forward'}
+          icon={step === 'summary' ? (paymentMethod === 'online' ? 'card' : 'checkmark') : 'arrow-forward'}
           size="sm"
           style={styles.navButton}
         />
@@ -1939,6 +2141,93 @@ export default function BookRepairScreen({ onNavigate }: BookRepairScreenProps) 
           </View>
         </View>
       </Modal>
+
+      {/* Payment Confirmation Modal */}
+      <Modal
+        visible={showPaymentConfirmModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPaymentConfirmModal(false)}
+      >
+        <View style={styles.confirmationModalOverlay}>
+          <View style={[styles.confirmationModalContent, { backgroundColor: colors.cardBackground }]}>
+            <View style={styles.confirmationModalHeader}>
+              <Ionicons name="card-outline" size={24} color={colors.primary} />
+              <Text style={[styles.confirmationModalTitle, { color: colors.text }]}>Payment Information</Text>
+            </View>
+
+            <View style={styles.confirmationModalBody}>
+              <View style={styles.paymentInfoContainer}>
+                <Text style={[styles.paymentInfoText, { color: colors.text }]}>
+                  You are about to pay only the service charge of{' '}
+                  <Text style={[styles.paymentAmount, { color: colors.primary }]}>
+                    ₹{getServiceChargeAfterDiscount()}
+                  </Text>
+                </Text>
+                
+                <View style={styles.paymentBreakdownContainer}>
+                  <View style={styles.paymentBreakdownRow}>
+                    <Text style={[styles.paymentBreakdownLabel, { color: colors.gray }]}>Service Charge:</Text>
+                    <Text style={[styles.paymentBreakdownValue, { color: colors.primary }]}>₹{getServiceChargeAfterDiscount()}</Text>
+                  </View>
+                  <View style={styles.paymentBreakdownRow}>
+                    <Text style={[styles.paymentBreakdownLabel, { color: colors.gray }]}>Other Charges:</Text>
+                    <Text style={[styles.paymentBreakdownValue, { color: colors.secondary }]}>₹{getOtherCharges()} (Pay later)</Text>
+                  </View>
+                </View>
+
+                <View style={styles.paymentNoticeContainer}>
+                  <Ionicons name="information-circle" size={20} color={colors.secondary} />
+                  <Text style={[styles.paymentNoticeText, { color: colors.secondary }]}>
+                    Extra charges shown are estimates only and must be paid separately to the mechanic during service.
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.confirmationModalFooter}>
+              <TouchableOpacity
+                style={[
+                  styles.confirmationModalCancelButton, 
+                  { borderColor: colors.border }
+                ]}
+                onPress={() => setShowPaymentConfirmModal(false)}
+              >
+                <Text style={[
+                  styles.confirmationModalCancelText, 
+                  { color: colors.gray }
+                ]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.confirmationModalConfirmButton, 
+                  { backgroundColor: colors.primary }
+                ]}
+                onPress={() => {
+                  setShowPaymentConfirmModal(false);
+                  setShowRazorpayModal(true);
+                }}
+              >
+                <Text style={[
+                  styles.confirmationModalConfirmText, 
+                  { color: 'white' }
+                ]}>Proceed to Pay</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Razorpay Payment Modal */}
+      <RazorpayPayment
+        visible={showRazorpayModal}
+        amount={getServiceChargeAfterDiscount()}
+        requestType="repair"
+        onSuccess={handlePaymentSuccess}
+        onFailure={handlePaymentFailure}
+        onClose={() => setShowRazorpayModal(false)}
+        theme={{ colors }}
+      />
 
       {/* ✅ NEW: Upload Progress Modal - Covers entire screen */}
       {isUploading && (
@@ -3098,6 +3387,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  
+  // Payment Modal Styles
+  paymentInfoContainer: {
+    gap: 16,
+  },
+  paymentInfoText: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  paymentAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  paymentBreakdownContainer: {
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 8,
+    padding: 12,
+    gap: 8,
+  },
+  paymentBreakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  paymentBreakdownLabel: {
+    fontSize: 14,
+  },
+  paymentBreakdownValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  paymentNoticeContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 8,
+    padding: 12,
+  },
+  paymentNoticeText: {
+    fontSize: 13,
+    lineHeight: 18,
+    flex: 1,
+  },
+  
   // ✅ NEW: Upload Progress Styles
   uploadOverlay: {
     position: 'absolute',
@@ -3553,5 +3888,31 @@ const styles = StyleSheet.create({
   modalBottomButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Payment breakdown styles
+  chargeTypeContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chargeTypeLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    fontStyle: 'italic',
+  },
+  paymentBreakdownNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    borderRadius: 8,
+  },
+  breakdownNoteText: {
+    fontSize: 12,
+    lineHeight: 16,
+    flex: 1,
   },
 }); 

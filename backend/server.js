@@ -165,6 +165,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const couponRoutes = require('./routes/coupon');
 const promotionalRoutes = require('./routes/promotional');
 const contactRoutes = require('./routes/contact');
+const paymentRoutes = require('./routes/payment');
 
 // Apply strict rate limiting to auth routes
 app.use('/api/auth', authLimiter, authRoutes);
@@ -175,6 +176,7 @@ app.use('/api/rental', userLimiter, uploadLimiter, rentalRoutes);
 app.use('/api/dashboard', userLimiter, dashboardRoutes);
 app.use('/api/coupon', userLimiter, couponRoutes);
 app.use('/api/promotional', userLimiter, promotionalRoutes);
+app.use('/api/payment', userLimiter, paymentRoutes);
 
 // Apply general rate limiting to other routes
 app.use('/api/contact', contactRoutes);

@@ -1752,6 +1752,196 @@ router.post('/requests/secure', authenticateToken, requireUser, [
     }
 });
 
+/**
+ * @route POST /api/repair/requests/with-payment
+ * @desc Create repair request with verified online payment
+ * @access Private
+ */
+router.post('/requests/with-payment', authenticateToken, requireUser, [
+    body('contactNumber').isString().withMessage('Contact number is required'),
+    body('address').isString().withMessage('Address is required'),
+    body('timeSlotId').isInt().withMessage('Time slot ID is required'),
+    body('totalAmount').isFloat().withMessage('Total amount is required'),
+    body('services').isArray().withMessage('Services must be an array'),
+    body('files').optional().isArray().withMessage('Files must be an array'),
+    body('razorpay_payment_id').isString().withMessage('Razorpay payment ID is required'),
+    body('razorpay_order_id').isString().withMessage('Razorpay order ID is required'),
+    body('razorpay_signature').isString().withMessage('Razorpay signature is required')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Validation error',
+            errors: errors.array()
+        });
+    }
+
+    try {
+        const {
+            contactNumber,
+            alternateNumber,
+            email,
+            notes,
+            address,
+            preferredDate,
+            timeSlotId,
+            totalAmount,
+            services,
+            files = [],
+            razorpay_payment_id,
+            razorpay_order_id,
+            razorpay_signature
+        } = req.body;
+
+        const userId = req.user.id;
+
+        // First, verify that the payment is completed and belongs to this user
+        const { data: paymentTransaction, error: paymentError } = await supabase
+            .from('payment_transactions')
+            .select('*')
+            .eq('razorpay_order_id', razorpay_order_id)
+            .eq('razorpay_payment_id', razorpay_payment_id)
+            .eq('user_id', userId)
+            .eq('status', 'completed')
+            .single();
+
+        if (paymentError || !paymentTransaction) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment not found or not completed. Please complete payment first.'
+            });
+        }
+
+        // Check if this payment has already been used for a request
+        if (paymentTransaction.request_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'This payment has already been used for another request.'
+            });
+        }
+
+        // Validate services
+        if (!Array.isArray(services) || services.length === 0) {
+            return res.status(400).json({ success: false, message: 'At least one service is required' });
+        }
+        
+        for (let i = 0; i < services.length; i++) {
+            const service = services[i];
+            if (!service.serviceId || !service.price) {
+                return res.status(400).json({ success: false, message: `Service ${i + 1} is missing required fields` });
+            }
+        }
+
+        // Validate files if provided
+        if (files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.s3Key || !file.fileType || !file.originalName || !file.fileSize) {
+                    return res.status(400).json({ success: false, message: `File ${i + 1} is missing required fields` });
+                }
+            }
+        }
+
+        // Set expiration date (24 hours from now for paid requests)
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+
+        // Create the repair request
+        const { data: requestData, error: requestError } = await supabase
+            .from('repair_requests')
+            .insert({
+                user_id: userId,
+                contact_number: contactNumber,
+                alternate_number: alternateNumber,
+                email: email,
+                notes: notes,
+                address: address,
+                preferred_date: preferredDate,
+                time_slot_id: timeSlotId,
+                total_amount: totalAmount,
+                payment_method: 'online',
+                status: 'pending', // Will be auto-approved since payment is verified
+                expires_at: expiresAt.toISOString()
+            })
+            .select();
+
+        if (requestError) {
+            console.error('Error creating repair request:', requestError);
+            return res.status(500).json({ success: false, message: 'Failed to create repair request' });
+        }
+
+        const requestId = requestData[0].id;
+
+        // Update payment transaction with request_id
+        const { error: updatePaymentError } = await supabase
+            .from('payment_transactions')
+            .update({
+                request_type: 'repair',
+                request_id: requestId,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', paymentTransaction.id);
+
+        if (updatePaymentError) {
+            console.error('Error updating payment transaction:', updatePaymentError);
+            // Don't fail the request, just log the error
+        }
+
+        // Insert services
+        const serviceData = services.map(service => ({
+            repair_request_id: requestId,
+            repair_service_id: service.serviceId,
+            price: service.price,
+            discount_amount: service.discountAmount || 0
+        }));
+
+        const { error: servicesError } = await supabase
+            .from('repair_request_services')
+            .insert(serviceData);
+
+        if (servicesError) {
+            console.error('Error inserting services:', servicesError);
+            return res.status(500).json({ success: false, message: 'Failed to create repair request services' });
+        }
+
+        // Insert files if provided
+        if (files.length > 0) {
+            const fileData = files.map((file, index) => ({
+                repair_request_id: requestId,
+                s3_key: file.s3Key,
+                file_type: file.fileType.startsWith('image/') ? 'image' : 'video',
+                original_name: file.originalName,
+                file_size: file.fileSize,
+                display_order: index
+            }));
+
+            const { error: filesError } = await supabase
+                .from('repair_request_files')
+                .insert(fileData);
+
+            if (filesError) {
+                console.error('Error inserting files:', filesError);
+                return res.status(500).json({ success: false, message: 'Failed to create repair request files' });
+            }
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'Repair request created successfully with verified payment',
+            data: { 
+                requestId,
+                paymentTransactionId: paymentTransaction.id,
+                paymentStatus: 'completed'
+            }
+        });
+
+    } catch (error) {
+        console.error('Unexpected error in paid repair request creation:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
 // GET /repair/requests - Get user's repair requests (User)
 router.get('/requests', authenticateToken, requireUser, async (req, res) => {
     try {
